@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analysis</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <header>
+        <h1><a href="/">Song Analyzer</a></h1>
+    </header>
+    <main>
+        <div class="container">
+            <div id="image" class="image-container half"></div>
+            <div id="analysis" class="analysis-container half"></div>
+        </div>
+    </main>
+    <footer>
+        <p>&copy; 2024 Song Search.</p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const params = new URLSearchParams(window.location.search);
+            const artist = params.get('artist');
+            const title = params.get('title');
+            const analysisDiv = document.getElementById('analysis');
+            const imageDiv = document.getElementById('image');
+            analysisDiv.innerHTML = `<p>Analyzing lyrics for "${title} by ${artist}"...</p>`;
+
+            try {
+                const response = await fetch(`/api/lyrics?artist=${encodeURIComponent(artist)}&title=${encodeURIComponent(title)}`);
+                if (!response.ok) {
+                    throw new Error("Failed to fetch lyrics.");
+                }
+                const data = await response.json();
+                if (data.lyrics) {
+                    const analysisResponse = await fetch(`/api/analyze`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ lyrics: data.lyrics })
+                    });
+                    if (!analysisResponse.ok) {
+                        throw new Error("Failed to analyze lyrics.");
+                    }
+                    const analysisData = await analysisResponse.json();
+                    analysisDiv.innerHTML = `<p>${analysisData.analysis}</p>`;
+                    
+                    // Generate prompt for DALL-E
+                    const promptResponse = await fetch(`/api/generate_prompt`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ analysis: analysisData.analysis })
+                    });
+                    const promptData = await promptResponse.json();
+                    if (promptData.prompt) {
+                        // Generate image using DALL-E
+                        const imageResponse = await fetch(`/api/generate_image`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ prompt: promptData.prompt })
+                        });
+                        const imageData = await imageResponse.json();
+                        if (imageData.image_url) {
+                            imageDiv.innerHTML = `<img src="${imageData.image_url}" alt="Generated Image">`;
+                        }
+                    }
+                } else {
+                    analysisDiv.innerHTML = `<p>No lyrics found for "${title} by ${artist}".</p>`;
+                }
+            } catch (error) {
+                analysisDiv.innerHTML = `<p>Error: ${error.message}</p>`;
+            }
+        });
+    </script>
+</body>
+</html>
