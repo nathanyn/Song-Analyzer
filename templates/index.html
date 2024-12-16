@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Song Search</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <header>
+        <h1><a href="/">Song Analyzer</a></h1>
+    </header>
+    <main>
+        <form id="songSearchForm" action="/search" method="get">
+            <input type="text" id="searchQuery" name="query" placeholder="Song Title by Artist" required>
+            <button type="submit">Search</button>
+        </form>
+    </main>
+    <footer>
+        <p>&copy; 2024 Song Search.</p>
+    </footer>
+</body>
+</html>
